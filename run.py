@@ -101,26 +101,29 @@ if __name__ == '__main__':
         gender = 0
 
     with closing(pymysql.connect(host=config_db['DB_HOST'], user=config_db['DB_USER'], db=config_db['DB_NAME'], password = config_db['DB_PASSWORD'], charset='utf8mb4')) as conn:
-        with conn.cursor() as cursor:
-            query = """SELECT * FROM names WHERE is_used = 0 and is_refused = 0 and gender = %s ORDER BY RAND() LIMIT 1"""
-            cursor.execute(query, gender)
-            persons = list(cursor)
-            if len(persons) == 0:
-                print("Нет необработанных имен данного пола")
-                exit()
-            else:
-                person = persons[0]
-        choose = 'r'
-        while choose == 'r':
-            current = convert(person[1], person[2], person[3])
-            choose = input("{} ('y'-согласиться, 'r'-перегенерировать, 'n'-отказаться): ".format(current))
-            while choose != 'y' and choose != 'n' and choose != 'r':
-                choose = input("{} ('y'-согласиться, 'r'-перегенерировать, 'n'-отказаться) :".format(current))
-        if choose == 'y':
-            query = 'UPDATE names SET is_used = 1 WHERE id = %s'
-        elif choose == 'n':
-            query = 'UPDATE names SET is_refused = 1 WHERE id = %s'
-        with conn.cursor() as cursor:
-            cursor.execute(query, person[0])
-            conn.commit()
+        repeat = True
+        while repeat:
+            with conn.cursor() as cursor:
+                query = """SELECT * FROM names WHERE is_used = 0 and is_refused = 0 and gender = %s ORDER BY RAND() LIMIT 1"""
+                cursor.execute(query, gender)
+                persons = list(cursor)
+                if len(persons) == 0:
+                    print("Нет необработанных имен данного пола")
+                    exit()
+                else:
+                    person = persons[0]
+            choose = 'r'
+            while choose == 'r':
+                current = convert(person[1], person[2], person[3])
+                choose = input("{} ('y'-согласиться, 'r'-перегенерировать, 'n'-отказаться): ".format(current))
+                while choose != 'y' and choose != 'n' and choose != 'r':
+                    choose = input("{} ('y'-согласиться, 'r'-перегенерировать, 'n'-отказаться) :".format(current))
+            if choose == 'y':
+                query = 'UPDATE names SET is_used = 1 WHERE id = %s'
+                repeat = False
+            elif choose == 'n':
+                query = 'UPDATE names SET is_refused = 1 WHERE id = %s'
+            with conn.cursor() as cursor:
+                cursor.execute(query, person[0])
+                conn.commit()
 
